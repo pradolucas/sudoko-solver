@@ -43,7 +43,7 @@ getBinDir, getLibDir, getDynLibDir, getDataDir, getLibexecDir, getSysconfDir :: 
 
 bindir, libdir, dynlibdir, datadir, libexecdir, sysconfdir :: FilePath
 bindir     = "C:\\Users\\fernanda.sayuri.ito\\OneDrive - Accenture\\Desktop\\sudoku-solver\\.stack-work\\install\\7b252857\\bin"
-libdir     = "C:\\Users\\fernanda.sayuri.ito\\OneDrive - Accenture\\Desktop\\sudoku-solver\\.stack-work\\install\\7b252857\\lib\\x86_64-windows-ghc-9.4.5\\sudoku-solver-0.1.0.0-7OVWrh60hDXDtVMwWh2irn-sudoku-solver"
+libdir     = "C:\\Users\\fernanda.sayuri.ito\\OneDrive - Accenture\\Desktop\\sudoku-solver\\.stack-work\\install\\7b252857\\lib\\x86_64-windows-ghc-9.4.5\\sudoku-solver-0.1.0.0-Bsium0nqHhF2sWvM0BFHW7-sudoku-solver"
 dynlibdir  = "C:\\Users\\fernanda.sayuri.ito\\OneDrive - Accenture\\Desktop\\sudoku-solver\\.stack-work\\install\\7b252857\\lib\\x86_64-windows-ghc-9.4.5"
 datadir    = "C:\\Users\\fernanda.sayuri.ito\\OneDrive - Accenture\\Desktop\\sudoku-solver\\.stack-work\\install\\7b252857\\share\\x86_64-windows-ghc-9.4.5\\sudoku-solver-0.1.0.0"
 libexecdir = "C:\\Users\\fernanda.sayuri.ito\\OneDrive - Accenture\\Desktop\\sudoku-solver\\.stack-work\\install\\7b252857\\libexec\\x86_64-windows-ghc-9.4.5\\sudoku-solver-0.1.0.0"
