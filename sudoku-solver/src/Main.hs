@@ -66,8 +66,8 @@ getClickedCell (x, y)
   | x' < 0 || x' >= 4 || y' < 0 || y' >= 4 = Nothing
   | otherwise = Just (floor x', floor y')
   where
-    x' = (x + 200) / 100
-    y' = (y - 200) / (-100)
+    x' = (x + 70) / 100
+    y' = (y - 70) / (-100)
 
 isCellValid :: (Int, Int) -> Int -> Grid -> Bool
 isCellValid (x, y) val grid =
