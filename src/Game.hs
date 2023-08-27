@@ -21,6 +21,7 @@ type Grid = [[Int]]
 data SudokuGame = SudokuGame
   { grid :: Grid
   , initialCells :: Grid
+  , candidates :: [[(Int, [Int])]]
   , selectedCell :: Maybe (Int, Int)
   , finished :: Bool
   }
@@ -65,40 +66,35 @@ isGridValid g = [isFinished (i,j) (g !! i !! j) g
                 | i<-[0..(gridSize-1)], j<-[0..(gridSize-1)]]
 
 -- Double check, apagar posteriormente
-isFinished :: Eq a => (Int, Int) -> a -> [[a]] -> Bool
-isFinished (x,y) val gr =
-  elementAppearsOnce val getRow -- checkLinha
-  && elementAppearsOnce val getColumn -- checkColuna
-  && elementAppearsOnce val getRegion -- checkBloco
+isFinished :: (Int, Int) -> Int -> Grid -> Bool
+isFinished (x,y) val g =
+  elementAppearsOnce val (getRow g x) -- checkLinha
+  && elementAppearsOnce val (getColumn g y) -- checkColuna
+  && elementAppearsOnce val (getRegion g x y) -- checkBloco
   where
     elementAppearsOnce element list = length (filter (== element) list) == 1
-    getRow = gr !! x
-    getColumn = map (!! y) gr
-    getRegion = [gr !! i !! j | i<-[blockLowerBoundX .. blockUpperBoundX],
-                     j<- [blockLowerBoundY .. blockUpperBoundY]]
-    blockLowerBoundX = blockSize * (x `div` blockSize)
-    blockUpperBoundX = blockLowerBoundX + (blockSize-1)
-    blockLowerBoundY = blockSize*(y `div` blockSize)
-    blockUpperBoundY = blockLowerBoundY + (blockSize-1)
 
 -- Somente válido durante a inserção
 isCellValid :: (Int, Int) -> Int -> Grid -> Bool
 isCellValid _ 0 _ = True
 isCellValid (x, y) val g =
-  notElem val getRow -- checkLinha
-  && notElem val getColumn -- checkColuna
-  && notElem val getRegion -- checkBloco
-  where
-    getRow = g !! x
-    getColumn = map (!! y) g
-    getRegion =
-      [g !! i !! j | i<-[blockLowerBoundX .. blockUpperBoundX],
-                     j<- [blockLowerBoundY .. blockUpperBoundY]]
-      where
-        blockLowerBoundX = blockSize * (x `div` blockSize)
-        blockUpperBoundX = blockLowerBoundX + (blockSize-1)
-        blockLowerBoundY = blockSize*(y `div` blockSize)
-        blockUpperBoundY = blockLowerBoundY + (blockSize-1)
+  notElem val (getRow g x) -- checkLinha
+  && notElem val (getColumn g y) -- checkColuna
+  && notElem val (getRegion g x y) -- checkBloco
+
+getRow, getColumn:: Grid -> Int -> [Int]
+getRow g x = g !! x
+getColumn g y = map (!! y) g
+
+getRegion :: Grid -> Int -> Int -> [Int]
+getRegion g x y= [g !! i !! j | i<-[blockLowerBoundX x .. blockUpperBoundX x],
+                     j<- [blockLowerBoundY y .. blockUpperBoundY y]]
+
+blockLowerBoundX, blockUpperBoundX, blockLowerBoundY, blockUpperBoundY :: Int -> Int
+blockLowerBoundX x = blockSize * (x `div` blockSize)
+blockUpperBoundX x = blockLowerBoundX x + (blockSize-1)
+blockLowerBoundY y = blockSize*(y `div` blockSize)
+blockUpperBoundY y = blockLowerBoundY y + (blockSize-1)
 
 
 -- Update State
@@ -127,6 +123,13 @@ runFillGrid g = foldl (\acc (i, j) -> fillCellRandomValue (i,j) (hashSeed i j) a
 initialGrid :: Grid
 initialGrid = runFillGrid $ replicate gridSize (replicate gridSize 0)
 
+-- Initialize candidates for each cell
+initialCandidates :: Grid -> [[(Int, [Int])]]
+initialCandidates g =  [
+                    [(val, [val | val /= 0]) | val <- row ]
+                    | row <- g
+                    ]
+
 isInitialValue :: (Int, Int) -> SudokuGame -> Bool
 isInitialValue (i,j) g = (initialCells g !! i !!  j)  /= 0
 
@@ -134,6 +137,7 @@ initialGame :: SudokuGame
 initialGame = SudokuGame
               initialGrid
               initialGrid
+              (initialCandidates initialGrid)
               Nothing
               False
 
