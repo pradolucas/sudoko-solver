@@ -14,20 +14,23 @@ module Game
    where
 import Control.Monad.Random
     ( fromList, evalRand, mkStdGen, RandomGen )
-import Data.Digest.Murmur32 ( asWord32, hash32 ) 
+import Data.Digest.Murmur32 ( asWord32, hash32 )
 
 type Grid = [[Int]]
 
 data SudokuGame = SudokuGame
   { grid :: Grid
+  , initialCells :: Grid
   , selectedCell :: Maybe (Int, Int)
   , finished :: Bool
   }
+  --TODO initialCells :: Grid, celulas q n podem ser alteradas
 
 -- Params
 
-gridSize :: Int
+gridSize, blockSize :: Int
 gridSize = 4
+blockSize = truncate . sqrt $ fromIntegral gridSize
 
 screenWidth, screenHeight :: Float
 screenWidth = 400
@@ -63,7 +66,7 @@ isGridValid g = [isFinished (i,j) (g !! i !! j) g
 
 -- Double check, apagar posteriormente
 isFinished :: Eq a => (Int, Int) -> a -> [[a]] -> Bool
-isFinished (x,y) val gr = 
+isFinished (x,y) val gr =
   elementAppearsOnce val getRow -- checkLinha
   && elementAppearsOnce val getColumn -- checkColuna
   && elementAppearsOnce val getRegion -- checkBloco
@@ -73,7 +76,6 @@ isFinished (x,y) val gr =
     getColumn = map (!! y) gr
     getRegion = [gr !! i !! j | i<-[blockLowerBoundX .. blockUpperBoundX],
                      j<- [blockLowerBoundY .. blockUpperBoundY]]
-    blockSize = truncate . sqrt $ fromIntegral gridSize
     blockLowerBoundX = blockSize * (x `div` blockSize)
     blockUpperBoundX = blockLowerBoundX + (blockSize-1)
     blockLowerBoundY = blockSize*(y `div` blockSize)
@@ -93,7 +95,6 @@ isCellValid (x, y) val g =
       [g !! i !! j | i<-[blockLowerBoundX .. blockUpperBoundX],
                      j<- [blockLowerBoundY .. blockUpperBoundY]]
       where
-        blockSize = truncate . sqrt $ fromIntegral gridSize
         blockLowerBoundX = blockSize * (x `div` blockSize)
         blockUpperBoundX = blockLowerBoundX + (blockSize-1)
         blockLowerBoundY = blockSize*(y `div` blockSize)
@@ -126,10 +127,15 @@ runFillGrid g = foldl (\acc (i, j) -> fillCellRandomValue (i,j) (hashSeed i j) a
 initialGrid :: Grid
 initialGrid = runFillGrid $ replicate gridSize (replicate gridSize 0)
 
+isInitialValue :: (Int, Int) -> SudokuGame -> Bool
+isInitialValue (i,j) g = (initialCells g !! i !!  j)  /= 0
 
 initialGame :: SudokuGame
-initialGame = SudokuGame initialGrid Nothing False
-
+initialGame = SudokuGame
+              initialGrid
+              initialGrid
+              Nothing
+              False
 
 
 -- gridify :: Int -> [a] -> [[a]]

@@ -18,7 +18,9 @@ import Game
       isCellValid,
       updateGrid,
       initialGame,
-      isGridValid )
+      isGridValid, isInitialValue )
+
+import Data.Char (ord, chr)
 
 
 
@@ -29,14 +31,17 @@ handleInput (EventKey (MouseButton LeftButton) Down _ mouse) game = case getClic
 
 -- Prenchimento da celula
 handleInput (EventKey (Char c) Down _ _) game@SudokuGame{ selectedCell = Just (x, y), grid = oldGrid }
-  | c >= '1' && c <= '9' && isCellValid (x, y) (read [c]) oldGrid =
+  | c >= '1' && c <= chr (ord '0' + gridSize)
+    && isCellValid (x, y) (read [c]) oldGrid
+    && not (isInitialValue (x,y) game)       =
       game { grid = updateGrid (x, y) (read [c]) oldGrid,
              selectedCell = Nothing,
              finished = checkFinishedGrid (updateGrid (x, y) (read [c]) oldGrid) }
 
 -- Apagar valor anterior, só toma caso tenha uma selectedCell = Just
-handleInput (EventKey (SpecialKey KeySpace) Down _ _) game@SudokuGame{ selectedCell = Just (x, y) } =
-  game { grid = updateGrid (x, y) 0 (grid game), selectedCell = Nothing }
+handleInput (EventKey (SpecialKey KeySpace) Down _ _) game@SudokuGame{ selectedCell = Just (x, y) }
+  | not $ isInitialValue (x,y) game =
+      game { grid = updateGrid (x, y) 0 (grid game), selectedCell = Nothing }
 
 -- reset
 handleInput (EventKey (Char 'r') Down _ _) _ = initialGame
