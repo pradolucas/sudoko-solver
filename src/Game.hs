@@ -16,6 +16,9 @@ import Control.Monad.Random
     ( fromList, evalRand, mkStdGen, RandomGen )
 import Data.Digest.Murmur32 ( asWord32, hash32 )
 import Data.List ((\\), intercalate)
+import System.Random
+import System.IO.Unsafe
+
 
 type Grid = [[Int]]
 
@@ -42,11 +45,11 @@ instance Show SudokuGame where
 -- Params
 
 gridSize, blockSize :: Int
-gridSize = 4
+gridSize = 9
 blockSize = truncate . sqrt $ fromIntegral gridSize -- Quadrante
 
 screenWidth, screenHeight :: Float
-screenWidth = 800
+screenWidth = 800 
 screenHeight = 600
 
 cellWidth, cellHeight :: Float
@@ -56,6 +59,10 @@ cellHeight = screenHeight / fromIntegral gridSize
 middleOfGridX, middleOfGridY :: Float
 middleOfGridX = screenWidth * 0.5
 middleOfGridY = screenHeight * 0.5
+
+generateRandomNumber :: Int
+{-# NOINLINE generateRandomNumber #-}
+generateRandomNumber = unsafePerformIO (getStdRandom (randomR (1, 3)))
 
 
 -- Randomness
@@ -122,13 +129,6 @@ updateGrid (x, y) val g =
 replaceAtIndex :: Int -> a -> [a] -> [a]
 replaceAtIndex n newVal xs = take n xs ++ [newVal] ++ drop (n + 1) xs
 
-fillCellRandomValue :: (Int, Int) -> Int -> Grid -> Grid
-fillCellRandomValue (i,j) seed g
-  | isCellValid (i,j) val g = updateGrid (i,j) val g
-  | otherwise               = fillCellRandomValue (i,j) (hashSeed seed seed+1) g
-  where
-    val = head $ take 1 $ customDistribution (mkStdGen seed) weightedDistribution
-
 updateCandidates :: (Int, Int) -> Int -> [[(Int, [Int])]] -> [[(Int, [Int])]]
 updateCandidates (x, y) newVal cands =
   [[updateRelatedCells (i, j) (val, vals)
@@ -152,6 +152,13 @@ selectNextCell (row, col)
 
 -- Initialization
 
+fillCellRandomValue :: (Int, Int) -> Int -> Grid -> Grid
+fillCellRandomValue (i,j) seed g
+  | isCellValid (i,j) val g = updateGrid (i,j) val g
+  | otherwise               = fillCellRandomValue (i,j) (hashSeed seed seed+1) g
+  where
+    val = head $ take 1 $ customDistribution (mkStdGen seed) weightedDistribution
+    
 runFillGrid :: Grid -> Grid
 runFillGrid g = foldl (\acc (i, j) -> fillCellRandomValue (i,j) (hashSeed i j) acc ) g elementOrder
   where
@@ -159,7 +166,11 @@ runFillGrid g = foldl (\acc (i, j) -> fillCellRandomValue (i,j) (hashSeed i j) a
 
 -- Garantir que tem solução, senão chamar novamente
 initialGrid :: Grid
-initialGrid = runFillGrid $ replicate gridSize (replicate gridSize 0)
+-- initialGrid = runFillGrid $ replicate gridSize (replicate gridSize 0)
+-- facil
+-- initialGrid = [[0,0,3,0,7,8,0,2,0],[0,0,0,1,0,9,7,0,4],[0,7,0,5,6,2,8,0,0],[0,3,2,0,0,0,0,0,1],[5,0,0,6,2,0,4,3,0],[0,4,0,3,8,0,2,5,0],[6,0,0,0,1,0,9,0,2],[3,1,0,2,9,0,8,7,0],[0,0,0,5,0,3,1,0,0]]
+-- dificil
+initialGrid = [[0,0,0,4,0,0,0,0,0],[7,0,0,9,0,0,0,0,0],[0,0,0,0,0,0,7,0,3],[9,0,0,0,0,0,0,0,5],[0,0,4,0,9,0,8,0,1],[0,0,0,0,0,0,0,0,0],[1,0,0,2,5,0,0,8,0],[3,4,6,0,1,8,0,0,9],[2,0,0,0,0,9,0,0,6]]
 -- initialGrid =  [ [0, 0, 0, 0]
 --                 , [3, 0, 0, 0]
 --                 , [0, 2, 0, 0]
@@ -170,17 +181,21 @@ initialCand :: [[(Int, [Int])]]
 initialCand = replicate gridSize (replicate gridSize (0, [1..gridSize]))
 
 -- Initialize candidates for each cell
-initCandidates :: [[(Int, [Int])]] -> Maybe (Int, Int) -> [[(Int, [Int])]]
-initCandidates cand Nothing  = cand 
-initCandidates cand (Just (i,j)) = initCandidates acc (selectNextCell (i, j))
-    where
-      acc = updateCandidates (i,j) (initialGrid !! i !! j) cand
 
--- initCandidates :: Grid -> [[(Int, [Int])]]
--- initCandidates g =  foldl (\acc (i,j, val) -> updateCandidates (i,j) val acc) initialCand elements
+candidatesFromGrid :: [[(Int, [Int])]] -> Grid -> [[(Int, [Int])]]
+candidatesFromGrid cand g = auxCandidatesFromGrid cand (Just (0,0)) g
+
+auxCandidatesFromGrid :: [[(Int, [Int])]] -> Maybe (Int, Int) -> Grid -> [[(Int, [Int])]]
+auxCandidatesFromGrid cand Nothing _ = cand
+auxCandidatesFromGrid cand (Just (i,j)) g = auxCandidatesFromGrid acc (selectNextCell (i, j)) g
+    where
+      acc = updateCandidates (i,j) (g !! i !! j) cand
+
+-- auxCandidatesFromGrid :: Grid -> [[(Int, [Int])]]
+-- auxCandidatesFromGrid g =  foldl (\acc (i,j, val) -> updateCandidates (i,j) val acc) initialCand elements
 --                   where
 --                     elements = [(i,j,val) | (i, row) <- zip [0..] g, (j, val) <- zip [0..] row]  
-                    
+
 
 isInitialValue :: (Int, Int) -> SudokuGame -> Bool
 isInitialValue (i,j) g = (initialCells g !! i !!  j)  /= 0
@@ -189,7 +204,7 @@ initialGame :: SudokuGame
 initialGame = SudokuGame
               initialGrid -- grid
               initialGrid -- initialCells
-              (initCandidates initialCand (Just (0,0))) -- candidates
+              (candidatesFromGrid initialCand initialGrid) -- candidates
               (Just (0,0)) -- solverSelectedCell
               Nothing      -- solvedGrid
               Nothing      -- selectCell
