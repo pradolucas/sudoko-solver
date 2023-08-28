@@ -40,7 +40,7 @@ drawCell val selected =
 
 
 drawValue :: Int -> Picture
-drawValue val = translate (-15) (-15) $ scale (1.2 *(cellWidth/middleOfGridX)) (1.2 *(cellWidth/middleOfGridX)) $ color black $
+drawValue val = translate (-15) (-15) $ scale (0.8 *(cellWidth/middleOfGridX)) (0.8 *(cellWidth/middleOfGridX)) $ color black $
   text $ if val == 0 then "" else show val
 -- TODO Ajustar escala e translate a se adequar ao grid
 highlightCell :: Bool -> Picture
