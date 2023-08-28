@@ -39,7 +39,7 @@ handleInput (EventKey (Char c) Down _ _) game@SudokuGame{ selectedCell = Just (x
              selectedCell = Nothing,
              finished = checkFinishedGrid (updateGrid (x, y) (read [c]) oldGrid) }
 
-handleInput (EventKey (SpecialKey KeySpace) Down _ _) game@SudokuGame{ selectedCell = Just (x, y) }
+handleInput (EventKey (SpecialKey KeySpace) Down _ _) game@SudokuGame{ selectedCell = Just (x, y), candidates = oldCandidates }
   | not $ isInitialValue (x, y) game =
       game { grid = updateGrid (x, y) 0 (grid game),
              candidates = updateCandidates (x,y) 0 oldCandidates, 
@@ -56,7 +56,7 @@ handleInput (EventKey (Char 't') Down _ _) game@SudokuGame{ selectedCell = Just 
           Nothing  -> game { selectedCell = Nothing }
   in newGame
 
-handleInput (EventKey (Char 'f') Down _ _) game@SudokuGame{ grid = oldGrid } =
+handleInput (EventKey (Char 'f') Down _ _) game@SudokuGame{ grid = oldGrid, candidates = oldCandidates} =
   let solution = constraintSudokuSolver game
       newGame =
         case solution of
