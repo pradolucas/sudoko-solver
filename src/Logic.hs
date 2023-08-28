@@ -45,21 +45,21 @@ handleInput (EventKey (SpecialKey KeySpace) Down _ _) game@SudokuGame{ selectedC
       game { grid = updateGrid (x, y) 0 (grid game), selectedCell = Nothing }
       
 -- Tip
-handleInput (EventKey (Char 't') Down _ _) game@SudokuGame{selectedCell = Just (x, y)} = 
+handleInput (EventKey (Char 't') Down _ _) game@SudokuGame{selectedCell = Just (x, y),  grid = oldGrid } = 
   let solution = constraintSudokuSolver initialGame
       newGame =
         case solution of
-          Just sol -> game { grid = updateGrid (x, y) (sol !! x !! y) (grid game) }
+          Just sol -> game { grid = updateGrid (x, y) (sol !! x !! y) oldGrid,
+                             selectedCell = Nothing,
+                             finished = checkFinishedGrid (updateGrid (x, y) (sol !! x !! y) oldGrid)}
           Nothing  -> game   -- TODO RETORNAR O GAME COM UMA MENSAGEM DE ERRO
   in newGame
       
 
--- reset
+-- Reset
 handleInput (EventKey (Char 'r') Down _ _) _ = initialGame
 handleInput _ game = game
 
-      
-    
 
 getClickedCell :: (Float, Float) -> Maybe (Int, Int)
 getClickedCell (x, y)
