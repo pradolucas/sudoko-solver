@@ -24,8 +24,10 @@ data SudokuGame = SudokuGame
   , initialCells :: Grid
   , candidates :: [[(Int, [Int])]]
   , solverSelectedCell :: Maybe (Int, Int)
+  , solvedGrid :: Maybe Grid
   , selectedCell :: Maybe (Int, Int)
   , finished :: Bool
+  , menuActive :: Bool
   }
   -- deriving (Show)
 
@@ -67,7 +69,8 @@ customDistribution gen weights = evalRand m gen
     where m = sequence . repeat . fromList $ weights
 
 hashSeed :: (Num b, Show a1, Show a2) => a1 -> a2 -> b
-hashSeed row col =  1 + fromIntegral (asWord32 $ hash32 (show row ++ "," ++ show col))
+hashSeed row col =  12 + fromIntegral (asWord32 $ hash32 (show row ++ "," ++ show col))
+
 
 -- Validate 
 
@@ -75,7 +78,6 @@ isGridValid :: Grid -> [Bool]
 isGridValid g = [isFinished (i,j) (g !! i !! j) g && (g !! i !! j) /=0
                 | i<-[0..(gridSize-1)], j<-[0..(gridSize-1)]]
 
--- Double check, apagar posteriormente
 isFinished :: (Int, Int) -> Int -> Grid -> Bool
 isFinished (x,y) val g =
   elementAppearsOnce val (getRow g x) -- checkLinha
@@ -83,6 +85,10 @@ isFinished (x,y) val g =
   && elementAppearsOnce val (getRegion g x y) -- checkBloco
   where
     elementAppearsOnce element list = length (filter (== element) list) == 1
+
+checkFinishedGrid :: Grid -> Bool
+checkFinishedGrid g = and (isGridValid g)
+-- checkFinishedGrid = all (notElem 0)
 
 -- Somente válido durante a inserção
 isCellValid :: (Int, Int) -> Int -> Grid -> Bool
@@ -106,6 +112,7 @@ blockUpperBoundX x = blockLowerBoundX x + (blockSize-1)
 blockLowerBoundY y = blockSize*(y `div` blockSize)
 blockUpperBoundY y = blockLowerBoundY y + (blockSize-1)
 
+
 -- Update State
 
 updateGrid :: (Int, Int) -> Int -> Grid -> Grid
@@ -122,6 +129,28 @@ fillCellRandomValue (i,j) seed g
   where
     val = head $ take 1 $ customDistribution (mkStdGen seed) weightedDistribution
 
+updateCandidates :: (Int, Int) -> Int -> [[(Int, [Int])]] -> [[(Int, [Int])]]
+updateCandidates (x, y) newVal cands =
+  [[updateRelatedCells (i, j) (val, vals)
+        | (j, (val, vals)) <- zip [0..] row ]
+        | (i, row) <- zip [0..] cands]
+  where
+    sameBlock (i1, j1) (i2, j2) = (blockLowerBoundX i1 == blockLowerBoundX i2) && (blockLowerBoundY j1 == blockLowerBoundY j2)
+    updateRelatedCells (i, j) (v, vals)
+      -- | newVal == 0      = (10, [1..gridSize])
+      | i == x && j == y && newVal == 0    = (newVal, vals) -- A cell que foi alterada, n tem mais candidatos
+      | i == x && j == y = (newVal, []) -- A cell que foi alterada, n tem mais candidatos
+      | i == x || j == y || sameBlock (i, j) (x, y) = (v, vals \\ [newVal])  -- Caso linha, coluna ou bloco do valor atualizado, apaga o valor como candidatos
+      | otherwise = (v, vals)
+
+selectNextCell :: (Int, Int) -> Maybe (Int, Int)
+selectNextCell (row, col)
+  | col + 1 < gridSize = Just (row, col + 1)  -- Move to the next column in the same row
+  | row + 1 < gridSize = Just (row + 1, 0)     -- Move to the first column of the next row
+  | otherwise = Nothing                         -- No more cells left to fill
+
+
+-- Initialization
 
 runFillGrid :: Grid -> Grid
 runFillGrid g = foldl (\acc (i, j) -> fillCellRandomValue (i,j) (hashSeed i j) acc ) g elementOrder
@@ -131,31 +160,43 @@ runFillGrid g = foldl (\acc (i, j) -> fillCellRandomValue (i,j) (hashSeed i j) a
 -- Garantir que tem solução, senão chamar novamente
 initialGrid :: Grid
 initialGrid = runFillGrid $ replicate gridSize (replicate gridSize 0)
--- initialGrid =  [ [0, 3, 0, 0]
---   , [0, 0, 2, 0]
---   , [0, 0, 0, 1]
---   , [0, 0, 0, 0]
---   ]
+-- initialGrid =  [ [0, 0, 0, 0]
+--                 , [3, 0, 0, 0]
+--                 , [0, 2, 0, 0]
+--                 , [0, 0, 1, 0]
+--               ]
+
+initialCand :: [[(Int, [Int])]]
+initialCand = replicate gridSize (replicate gridSize (0, [1..gridSize]))
+
 -- Initialize candidates for each cell
-initCandidates :: Grid -> [[(Int, [Int])]]
-initCandidates g =  [
-                    [(val, if val /=0 then [] else [1..gridSize] \\ [val]) | val <- row ]
-                    | row <- g]  -- TODO os que já tem valor alterar para sem candidatos
+initCandidates :: [[(Int, [Int])]] -> Maybe (Int, Int) -> [[(Int, [Int])]]
+initCandidates cand Nothing  = cand 
+initCandidates cand (Just (i,j)) = initCandidates acc (selectNextCell (i, j))
+    where
+      acc = updateCandidates (i,j) (initialGrid !! i !! j) cand
+
+-- initCandidates :: Grid -> [[(Int, [Int])]]
+-- initCandidates g =  foldl (\acc (i,j, val) -> updateCandidates (i,j) val acc) initialCand elements
+--                   where
+--                     elements = [(i,j,val) | (i, row) <- zip [0..] g, (j, val) <- zip [0..] row]  
+                    
 
 isInitialValue :: (Int, Int) -> SudokuGame -> Bool
 isInitialValue (i,j) g = (initialCells g !! i !!  j)  /= 0
 
 initialGame :: SudokuGame
 initialGame = SudokuGame
-              initialGrid
-              initialGrid
-              (initCandidates initialGrid)
-              Nothing
-              Nothing
-              False
+              initialGrid -- grid
+              initialGrid -- initialCells
+              (initCandidates initialCand (Just (0,0))) -- candidates
+              (Just (0,0)) -- solverSelectedCell
+              Nothing      -- solvedGrid
+              Nothing      -- selectCell
+              False        -- finished
+              False        -- menuActive
 
 
--- gridify :: Int -> [a] -> [[a]]
--- gridify _ [] = []
--- gridify n xs = take n xs : gridify n (drop n xs)
+
+
 
