@@ -18,7 +18,7 @@ import Game
       updateGrid,
       isInitialValue,
       initialGame,
-      checkFinishedGrid, updateCandidates, candidatesFromGrid )
+      checkFinishedGrid, updateCandidates, candidatesFromGrid, resetCandidates )
 
 import Data.Char (ord, chr)
 import Solver (constraintSudokuSolver)
@@ -44,7 +44,8 @@ handleInput (EventKey (Char c) Down _ _) game@SudokuGame{ selectedCell = Just (x
 handleInput (EventKey (SpecialKey KeySpace) Down _ _) game@SudokuGame{ selectedCell = Just (x, y), candidates= oldCandidates }
   | not $ isInitialValue (x,y) game =
       game { grid = updateGrid (x, y) 0 (grid game),
-             candidates = updateCandidates (x, y) 0 oldCandidates,
+             candidates = updateCandidates (x,y) 0 oldCandidates, 
+            --  candidates = resetCandidates (x, y) oldCandidates,
              selectedCell = Nothing }
       
 -- Tip
@@ -64,9 +65,9 @@ handleInput (EventKey (Char 'f') Down _ _) game@SudokuGame{grid = oldGrid, candi
       newGame =
         case solution of
           Just sol -> game { grid = sol,
-                             candidates = candidatesFromGrid oldCandidates oldGrid ,
+                             candidates   = candidatesFromGrid oldCandidates oldGrid,
                              selectedCell = Nothing,
-                             finished = checkFinishedGrid sol}
+                             finished     = checkFinishedGrid sol}
           Nothing  -> game  {selectedCell = Nothing} -- TODO RETORNAR O GAME COM UMA MENSAGEM DE ERRO
   in newGame
   

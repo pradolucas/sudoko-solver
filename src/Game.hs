@@ -18,7 +18,7 @@ import Data.Digest.Murmur32 ( asWord32, hash32 )
 import Data.List ((\\), intercalate)
 import System.Random
 import System.IO.Unsafe
-
+import Data.Set (toList, fromList)
 
 type Grid = [[Int]]
 
@@ -49,7 +49,7 @@ gridSize = 9
 blockSize = truncate . sqrt $ fromIntegral gridSize -- Quadrante
 
 screenWidth, screenHeight :: Float
-screenWidth = 800 
+screenWidth = 800
 screenHeight = 600
 
 cellWidth, cellHeight :: Float
@@ -60,9 +60,9 @@ middleOfGridX, middleOfGridY :: Float
 middleOfGridX = screenWidth * 0.5
 middleOfGridY = screenHeight * 0.5
 
-generateRandomNumber :: Int
-{-# NOINLINE generateRandomNumber #-}
-generateRandomNumber = unsafePerformIO (getStdRandom (randomR (1, 3)))
+-- generateRandomNumber :: Int
+-- {-# NOINLINE generateRandomNumber #-}
+-- generateRandomNumber = unsafePerformIO (getStdRandom (randomR (1, 3)))
 
 
 -- Randomness
@@ -73,7 +73,7 @@ weightedDistribution = (0, 5) : [(i, 1) | i<-[1..(gridSize-1)]]
 
 customDistribution :: RandomGen g => g -> [(a, Rational)] -> [a]
 customDistribution gen weights = evalRand m gen
-    where m = sequence . repeat . fromList $ weights
+    where m = sequence . repeat . Control.Monad.Random.fromList $ weights
 
 hashSeed :: (Num b, Show a1, Show a2) => a1 -> a2 -> b
 hashSeed row col =  12 + fromIntegral (asWord32 $ hash32 (show row ++ "," ++ show col))
@@ -130,18 +130,68 @@ replaceAtIndex :: Int -> a -> [a] -> [a]
 replaceAtIndex n newVal xs = take n xs ++ [newVal] ++ drop (n + 1) xs
 
 updateCandidates :: (Int, Int) -> Int -> [[(Int, [Int])]] -> [[(Int, [Int])]]
-updateCandidates (x, y) newVal cands =
-  [[updateRelatedCells (i, j) (val, vals)
+updateCandidates (x, y) newVal cands
+  | newVal == 0 = resetCandidates (x,y) cands
+  | otherwise    = updatedCandidates
+
+    where
+      
+      updateRelatedCells (i, j) (v, vals)
+        -- | i == x && j == y && newVal == 0   = (newVal, [1..gridSize] \\ valuesFromRelated (i,j) cands) -- A cell que foi alterada, n tem mais candidatos
+        | i == x && j == y = (newVal, []) -- A cell que foi alterada, n tem mais candidatos
+        | i == x || j == y || sameBlock (i, j) (x, y) = (v, vals \\ [newVal])  -- Caso linha, coluna ou bloco do valor atualizado, apaga o valor como candidatos
+        | otherwise = (v, vals)
+
+      updatedCandidates = [[updateRelatedCells (i, j) (val, vals)
+          | (j, (val, vals)) <- zip [0..] row ]
+          | (i, row) <- zip [0..] cands]
+
+resetCandidates :: (Int, Int) -> [[(Int, [Int])]] -> [[(Int, [Int])]]
+resetCandidates (x, y) cands =
+    [[  update0 (i, j) (val, vals)
         | (j, (val, vals)) <- zip [0..] row ]
         | (i, row) <- zip [0..] cands]
-  where
-    sameBlock (i1, j1) (i2, j2) = (blockLowerBoundX i1 == blockLowerBoundX i2) && (blockLowerBoundY j1 == blockLowerBoundY j2)
-    updateRelatedCells (i, j) (v, vals)
-      -- | newVal == 0      = (10, [1..gridSize])
-      | i == x && j == y && newVal == 0    = (newVal, vals) -- A cell que foi alterada, n tem mais candidatos
-      | i == x && j == y = (newVal, []) -- A cell que foi alterada, n tem mais candidatos
-      | i == x || j == y || sameBlock (i, j) (x, y) = (v, vals \\ [newVal])  -- Caso linha, coluna ou bloco do valor atualizado, apaga o valor como candidatos
-      | otherwise = (v, vals)
+    where
+      oldValue = fst $ cands !! x !! y
+      possibleValue 
+        | oldValue == 0 = []
+        | otherwise     = [oldValue]
+      
+      update0 (i, j) (val, vals)
+        | x==i && y==j  = (0, [1..gridSize] \\ valuesFromRelated (i,j) cands)
+        | i == x || j == y || sameBlock (i, j) (x, y) = 
+            case vals of
+                  [] -> (val, [])  -- caso já esteja preenchido, n atualizar candidatos
+                  xs -> (val, xs ++ possibleValue)
+        | otherwise = (val, vals)
+
+
+-- resetCandidates :: (Int, Int) -> [[(Int, [Int])]] -> [[(Int, [Int])]]
+-- resetCandidates (x, y) cands =
+--     [[  if x==i && y==j 
+--         then (0, [1..gridSize] \\ valuesFromRelated (i,j) cands)
+--         else (val, 
+--                   case vals of
+--                     [] -> []  -- caso já esteja preenchido, n atualizar candidatos
+--                     xs -> xs ++ possibleValue 
+--          ) 
+--         | (j, (val, vals)) <- zip [0..] row ]
+--         | (i, row) <- zip [0..] cands]
+--     where
+
+sameBlock :: (Int, Int) -> (Int, Int) -> Bool
+sameBlock (i1, j1) (i2, j2) = (blockLowerBoundX i1 == blockLowerBoundX i2) && (blockLowerBoundY j1 == blockLowerBoundY j2)
+
+dropDuplicates :: Ord a => [a] -> [a]
+dropDuplicates x = toList ( Data.Set.fromList x)
+
+valuesFromRelated :: (Int, Int) -> [[(Int, [Int])]] -> [Int]
+valuesFromRelated (i, j) g = dropDuplicates $ map (\(x,y) -> fst $ g !! x !! y) relatedIdx
+    where
+      relatedIdx = rowCells i ++ colCells j ++ blockCells (i, j)
+      rowCells x = [(x, col) | col <- [0..gridSize-1]]
+      colCells y = [(row, y) | row <- [0..gridSize-1]]
+      blockCells (x, y) = [(r, c) | r <- [blockLowerBoundX  x .. blockUpperBoundX x], c <- [blockLowerBoundY y .. blockUpperBoundY y]]
 
 selectNextCell :: (Int, Int) -> Maybe (Int, Int)
 selectNextCell (row, col)
@@ -158,7 +208,7 @@ fillCellRandomValue (i,j) seed g
   | otherwise               = fillCellRandomValue (i,j) (hashSeed seed seed+1) g
   where
     val = head $ take 1 $ customDistribution (mkStdGen seed) weightedDistribution
-    
+
 runFillGrid :: Grid -> Grid
 runFillGrid g = foldl (\acc (i, j) -> fillCellRandomValue (i,j) (hashSeed i j) acc ) g elementOrder
   where
