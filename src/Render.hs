@@ -9,6 +9,8 @@ where
 import Game ( SudokuGame(..), middleOfGridX, middleOfGridY, gridSize, cellWidth, cellHeight)
 import Graphics.Gloss
     ( black,
+      blue,
+      white,
       green,
       blank,
       color,
@@ -46,9 +48,12 @@ highlightCell selected =
   if selected then color (makeColorI 0 0 255 100) $ rectangleSolid cellWidth cellHeight
               else blank
 
--- TODO deixar mais bonito, 
 drawFinishMessage :: SudokuGame -> Picture
 drawFinishMessage game =
   if finished game 
-    then translate (-100) 0 $ color green $ scale 0.5 0.5 $ text "Parabéns!" 
+    then translate (-100) 0 $ color green $ scale 0.5 0.5 $ pictures
+      [ color blue $ rectangleSolid 8000 6000
+      , translate (-90) (-10) $ color white $ text "Parabens, voce ganhou! :)"
+      , color white $ translate (-150) (-100) $ scale 0.5 0.5 $ text "Aperte 'r' para jogar novamente"
+      ]
     else blank
