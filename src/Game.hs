@@ -15,6 +15,7 @@ module Game
 import Control.Monad.Random
     ( fromList, evalRand, mkStdGen, RandomGen )
 import Data.Digest.Murmur32 ( asWord32, hash32 )
+import Data.List ((\\))
 
 type Grid = [[Int]]
 
@@ -22,20 +23,22 @@ data SudokuGame = SudokuGame
   { grid :: Grid
   , initialCells :: Grid
   , candidates :: [[(Int, [Int])]]
+  , solverSelectedCell :: Maybe (Int, Int)
   , selectedCell :: Maybe (Int, Int)
   , finished :: Bool
   }
+  deriving (Show)
   --TODO initialCells :: Grid, celulas q n podem ser alteradas
 
 -- Params
 
 gridSize, blockSize :: Int
 gridSize = 4
-blockSize = truncate . sqrt $ fromIntegral gridSize
+blockSize = truncate . sqrt $ fromIntegral gridSize -- Quadrante
 
 screenWidth, screenHeight :: Float
-screenWidth = 400
-screenHeight = 400
+screenWidth = 800
+screenHeight = 600
 
 cellWidth, cellHeight :: Float
 cellWidth = screenWidth / fromIntegral gridSize
@@ -57,12 +60,12 @@ customDistribution gen weights = evalRand m gen
     where m = sequence . repeat . fromList $ weights
 
 hashSeed :: (Num b, Show a1, Show a2) => a1 -> a2 -> b
-hashSeed row col = fromIntegral $ asWord32 $ hash32 (show row ++ "," ++ show col)
+hashSeed row col =  1 + fromIntegral (asWord32 $ hash32 (show row ++ "," ++ show col))
 
 -- Validate 
 
 isGridValid :: Grid -> [Bool]
-isGridValid g = [isFinished (i,j) (g !! i !! j) g
+isGridValid g = [isFinished (i,j) (g !! i !! j) g && (g !! i !! j) /=0
                 | i<-[0..(gridSize-1)], j<-[0..(gridSize-1)]]
 
 -- Double check, apagar posteriormente
@@ -96,7 +99,6 @@ blockUpperBoundX x = blockLowerBoundX x + (blockSize-1)
 blockLowerBoundY y = blockSize*(y `div` blockSize)
 blockUpperBoundY y = blockLowerBoundY y + (blockSize-1)
 
-
 -- Update State
 
 updateGrid :: (Int, Int) -> Int -> Grid -> Grid
@@ -109,7 +111,7 @@ replaceAtIndex n newVal xs = take n xs ++ [newVal] ++ drop (n + 1) xs
 fillCellRandomValue :: (Int, Int) -> Int -> Grid -> Grid
 fillCellRandomValue (i,j) seed g
   | isCellValid (i,j) val g = updateGrid (i,j) val g
-  | otherwise               = fillCellRandomValue (i,j) (hashSeed seed 1) g
+  | otherwise               = fillCellRandomValue (i,j) (hashSeed seed seed+1) g
   where
     val = head $ take 1 $ customDistribution (mkStdGen seed) weightedDistribution
 
@@ -122,13 +124,16 @@ runFillGrid g = foldl (\acc (i, j) -> fillCellRandomValue (i,j) (hashSeed i j) a
 -- Garantir que tem solução, senão chamar novamente
 initialGrid :: Grid
 initialGrid = runFillGrid $ replicate gridSize (replicate gridSize 0)
-
+-- initialGrid =  [ [0, 3, 0, 0]
+--   , [0, 0, 2, 0]
+--   , [0, 0, 0, 1]
+--   , [0, 0, 0, 0]
+--   ]
 -- Initialize candidates for each cell
-initialCandidates :: Grid -> [[(Int, [Int])]]
-initialCandidates g =  [
-                    [(val, [val | val /= 0]) | val <- row ]
-                    | row <- g
-                    ]
+initCandidates :: Grid -> [[(Int, [Int])]]
+initCandidates g =  [
+                    [(val, if val /=0 then [] else [1..gridSize] \\ [val]) | val <- row ]
+                    | row <- g]  -- TODO os que já tem valor alterar para sem candidatos
 
 isInitialValue :: (Int, Int) -> SudokuGame -> Bool
 isInitialValue (i,j) g = (initialCells g !! i !!  j)  /= 0
@@ -137,7 +142,8 @@ initialGame :: SudokuGame
 initialGame = SudokuGame
               initialGrid
               initialGrid
-              (initialCandidates initialGrid)
+              (initCandidates initialGrid)
+              Nothing
               Nothing
               False
 
