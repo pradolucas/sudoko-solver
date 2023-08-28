@@ -24,14 +24,16 @@ import Graphics.Gloss
       Picture )
 
 drawGame :: SudokuGame -> Picture
-drawGame game = translate (-middleOfGridX)                          -- puts in the center
-                          middleOfGridY
-                          frame   
+drawGame game
+  | menuActive game = drawMenu
+  | otherwise = translate (-middleOfGridX) middleOfGridY frame
     where
-    frame = pictures $
+      frame = pictures $
             [ translate (fromIntegral x * cellWidth) (fromIntegral y * (- cellHeight)) $
               drawCell (grid game !! x !! y) (selectedCell game == Just (x, y))
             | x <- [0..gridSize-1], y <- [0..gridSize-1] ] ++ [drawFinishMessage game]
+
+
 
 drawCell :: Int -> Bool -> Picture
 drawCell val selected =
@@ -57,3 +59,15 @@ drawFinishMessage game =
       , color white $ translate (-150) (-100) $ scale 0.5 0.5 $ text "Aperte 'r' para jogar novamente"
       ]
     else blank
+
+
+
+
+drawMenu :: Picture
+drawMenu = translate (-100) 0 $ color green $ scale 0.5 0.5 $ pictures
+      [ color blue $ rectangleSolid 8000 6000
+      , translate (-90) (-10) $ color white $ text "Sudoku"
+      , color white $ translate (-150) (-100) $ scale 0.5 0.5 $ text "Digite 'e' para easy"
+      , color white $ translate (-150) (-180) $ scale 0.5 0.5 $ text "Digite 'm' para medium"
+      , color white $ translate (-150) (-250) $ scale 0.5 0.5 $ text "Digite 'h' para hard"
+      ]

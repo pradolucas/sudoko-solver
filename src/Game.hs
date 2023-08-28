@@ -209,7 +209,7 @@ initialGame = SudokuGame
               Nothing      -- solvedGrid
               Nothing      -- selectCell
               False        -- finished
-              False        -- menuActive
+              True        -- menuActive
 
 
 
