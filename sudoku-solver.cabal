@@ -20,10 +20,11 @@ executable sudoku-solver
   other-modules:      Game
                      ,Logic
                      ,Render
+                     ,Solver
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5
                      , gloss
-                     , array
+                     , containers
                      , MonadRandom
                      , murmur-hash
   ghc-options:        -D2 -Wall
