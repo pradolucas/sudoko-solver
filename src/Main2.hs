@@ -8,22 +8,35 @@ data SudokuGame = SudokuGame
   { grid :: Grid
   , selectedCell :: Maybe (Int, Int)
   , finished :: Bool
+  , menuActive :: Bool
   }
 
 initialGame :: SudokuGame
-initialGame = SudokuGame initialGrid Nothing False
+initialGame = SudokuGame initialGrid Nothing False True
 
 initialGrid :: Grid
 initialGrid = replicate 9 (replicate 9 0)
+
+drawMenu :: Picture
+drawMenu = translate (-100) 0 $ color green $ scale 0.5 0.5 $ pictures
+      [ color blue $ rectangleSolid 8000 6000
+      , translate (-90) (-10) $ color white $ text "Sudoku"
+      , color white $ translate (-150) (-100) $ scale 0.5 0.5 $ text "Digite 'f' para facil"
+      , color white $ translate (-150) (-180) $ scale 0.5 0.5 $ text "Digite 'm' para medio"
+      , color white $ translate (-150) (-250) $ scale 0.5 0.5 $ text "Digite 'd' para dificil"
+      ]
 
 window :: Display
 window = InWindow "Sudoku 9x9" (600, 600) (100, 100)
 
 drawGame :: SudokuGame -> Picture
-drawGame game = pictures $
-  [ translate (fromIntegral x * 60) (fromIntegral y * (-60)) $
-    drawCell (grid game !! y !! x) (selectedCell game == Just (x, y))
-  | x <- [0..8], y <- [0..8] ] ++ [drawFinishMessage game]
+drawGame game 
+  | menuActive game = drawMenu
+  | otherwise = pictures $
+      [ translate (fromIntegral x * 60) (fromIntegral y * (-60)) $
+      drawCell (grid game !! y !! x) (selectedCell game == Just (x, y))
+      | x <- [0..8], y <- [0..8] ] ++ [drawFinishMessage game]
+
 
 drawCell :: Int -> Bool -> Picture
 drawCell val selected =
@@ -76,17 +89,29 @@ checkFinishedGrid :: Grid -> Bool
 checkFinishedGrid = all (all (/= 0))
 
 handleInput :: Event -> SudokuGame -> SudokuGame
-handleInput (EventKey (MouseButton LeftButton) Down _ mouse) game =
-  case getClickedCell mouse of
-    Just cell -> game { selectedCell = Just cell }
-    Nothing   -> game { selectedCell = Nothing }
-handleInput (EventKey (Char c) Down _ _) game@SudokuGame{ selectedCell = Just (x, y), grid = oldGrid }
-  | c >= '1' && c <= '9' && isCellValid (x, y) (read [c]) oldGrid =
-      game { grid = updateGrid (x, y) (read [c]) oldGrid, selectedCell = Nothing, finished = checkFinishedGrid (updateGrid (x, y) (read [c]) oldGrid) }
-handleInput (EventKey (SpecialKey KeySpace) Down _ _) game@SudokuGame{ selectedCell = Just (x, y) } =
-  game { grid = updateGrid (x, y) 0 (grid game), selectedCell = Nothing }
-handleInput (EventKey (Char 'r') Down _ _) _ = initialGame
-handleInput _ game = game
+handleInput (EventKey (Char key) Down _ _) game@SudokuGame{ menuActive = True }
+  | key == 'f' || key == 'm' || key == 'd' = game { menuActive = False }
+handleInput e game
+  | menuActive game = game
+  | otherwise = case e of
+    EventKey (MouseButton LeftButton) Down _ mouse ->
+      case getClickedCell mouse of
+        Just cell -> game { selectedCell = Just cell }
+        Nothing   -> game { selectedCell = Nothing }
+    EventKey (Char c) Down _ _ ->
+      case selectedCell game of
+        Just (x, y) | c >= '1' && c <= '9' && isCellValid (x, y) (read [c]) (grid game) ->
+          game { grid = updateGrid (x, y) (read [c]) (grid game)
+               , selectedCell = Nothing
+               , finished = checkFinishedGrid (updateGrid (x, y) (read [c]) (grid game))
+               }
+        _ -> game
+    EventKey (SpecialKey KeySpace) Down _ _ ->
+      case selectedCell game of
+        Just (x, y) -> game { grid = updateGrid (x, y) 0 (grid game), selectedCell = Nothing }
+        _ -> game
+    EventKey (Char 'r') Down _ _ -> initialGame
+    _ -> game
 
 main :: IO ()
 main = play window white 10 initialGame drawGame handleInput (const id)
