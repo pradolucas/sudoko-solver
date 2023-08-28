@@ -54,8 +54,9 @@ drawFinishMessage :: SudokuGame -> Picture
 drawFinishMessage game =
   if finished game 
     then translate (-100) 0 $ color green $ scale 0.5 0.5 $ pictures
-      [ color blue $ rectangleSolid 8000 6000
-      , translate (-90) (-10) $ color white $ text "Parabens, voce ganhou! :)"
+      [ 
+        -- color blue $ rectangleSolid 8000 6000,
+       translate (-90) (-10) $ color white $ text "Parabens, voce ganhou! :)"
       , color white $ translate (-150) (-100) $ scale 0.5 0.5 $ text "Aperte 'r' para jogar novamente"
       ]
     else blank
@@ -66,8 +67,12 @@ drawFinishMessage game =
 drawMenu :: Picture
 drawMenu = translate (-100) 0 $ color green $ scale 0.5 0.5 $ pictures
       [ color blue $ rectangleSolid 8000 6000
-      , translate (-90) (-10) $ color white $ text "Sudoku"
-      , color white $ translate (-150) (-100) $ scale 0.5 0.5 $ text "Digite 'e' para easy"
-      , color white $ translate (-150) (-180) $ scale 0.5 0.5 $ text "Digite 'm' para medium"
-      , color white $ translate (-150) (-250) $ scale 0.5 0.5 $ text "Digite 'h' para hard"
+      , translate (-300) (410) $ color white $ text "Sudoku"
+      , color white $ translate (-300) (280) $ scale 0.5 0.5 $ text "Digite 'e' para easy"
+      , color white $ translate (-300) (200) $ scale 0.5 0.5 $ text "Digite 'm' para medium"
+      , color white $ translate (-300) (130) $ scale 0.5 0.5 $ text "Digite 'h' para hard"
+      , color white $ translate (-300) (-100) $ scale 0.5 0.5 $ text "Regras do jogo:"
+      , color white $ translate (-300) (-200) $ scale 0.5 0.5 $ text "Digite 'r' para reiniciar o jogo"
+      , color white $ translate (-300) (-270) $ scale 0.5 0.5 $ text "Para limpar a celula, selecione-a e aperte 'espaco'"
+      , color white $ translate (-300) (-330) $ scale 0.5 0.5 $ text "Para dica: selecione uma celula e parte 't'"
       ]
