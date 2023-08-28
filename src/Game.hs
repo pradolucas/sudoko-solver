@@ -15,7 +15,7 @@ module Game
 import Control.Monad.Random
     ( fromList, evalRand, mkStdGen, RandomGen )
 import Data.Digest.Murmur32 ( asWord32, hash32 )
-import Data.List ((\\))
+import Data.List ((\\), intercalate)
 
 type Grid = [[Int]]
 
@@ -27,8 +27,15 @@ data SudokuGame = SudokuGame
   , selectedCell :: Maybe (Int, Int)
   , finished :: Bool
   }
-  deriving (Show)
-  --TODO initialCells :: Grid, celulas q n podem ser alteradas
+  -- deriving (Show)
+
+instance Show SudokuGame where
+  show g = gridShow ++ separator ++ candidatesShow
+    where
+      gridShow = "Grid:\n" ++ unlines (map (intercalate " | " . map show) (grid g))
+      candidatesShow = "Candidates:\n" ++ unlines (map (intercalate " | " . map show) (candidates g))
+      separator = replicate 20 '_' ++ "\n\n"
+
 
 -- Params
 
