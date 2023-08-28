@@ -25,6 +25,7 @@ executable sudoku-solver
   build-depends:       base >= 4.7 && < 5
                      , gloss
                      , containers
+                     , random
                      , MonadRandom
                      , murmur-hash
   ghc-options:        -D2 -Wall
