@@ -8,8 +8,7 @@ import Graphics.Gloss.Interface.IO.Game
       MouseButton(LeftButton),
       SpecialKey(KeySpace) )
 import Game
-    ( SudokuGame(..),
-      Grid,
+    ( SudokuGame(SudokuGame, grid, finished, selectedCell),
       gridSize,
       cellWidth,
       cellHeight,
@@ -17,10 +16,12 @@ import Game
       middleOfGridY,
       isCellValid,
       updateGrid,
+      isInitialValue,
       initialGame,
-      isGridValid, isInitialValue )
+      checkFinishedGrid )
 
 import Data.Char (ord, chr)
+import Solver (constraintSudokuSolver)
 
 
 
@@ -42,11 +43,23 @@ handleInput (EventKey (Char c) Down _ _) game@SudokuGame{ selectedCell = Just (x
 handleInput (EventKey (SpecialKey KeySpace) Down _ _) game@SudokuGame{ selectedCell = Just (x, y) }
   | not $ isInitialValue (x,y) game =
       game { grid = updateGrid (x, y) 0 (grid game), selectedCell = Nothing }
+      
+-- Tip
+handleInput (EventKey (Char 't') Down _ _) game@SudokuGame{selectedCell = Just (x, y)} = 
+  let solution = constraintSudokuSolver initialGame
+      newGame =
+        case solution of
+          Just sol -> game { grid = updateGrid (x, y) (sol !! x !! y) (grid game) }
+          Nothing  -> game   -- TODO RETORNAR O GAME COM UMA MENSAGEM DE ERRO
+  in newGame
+      
 
 -- reset
 handleInput (EventKey (Char 'r') Down _ _) _ = initialGame
 handleInput _ game = game
 
+      
+    
 
 getClickedCell :: (Float, Float) -> Maybe (Int, Int)
 getClickedCell (x, y)
@@ -57,8 +70,5 @@ getClickedCell (x, y)
     x' = (x + (middleOfGridX + cellWidth/2)) / cellWidth
     y' = (y - (middleOfGridY + cellHeight/2)) / (-cellHeight)
 
-checkFinishedGrid :: Grid -> Bool
-checkFinishedGrid g = and (isGridValid g)
--- checkFinishedGrid = all (notElem 0)
 
 
