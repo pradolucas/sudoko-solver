@@ -73,5 +73,5 @@ drawMenu = translate (-100) 0 $ color green $ scale 0.5 0.5 $ pictures
       , color white $ translate (-300) (-200) $ scale 0.5 0.5 $ text "Digite 'r' para reiniciar o jogo"
       , color white $ translate (-300) (-270) $ scale 0.5 0.5 $ text "Digite 'f' para mostrar a solucao"
       , color white $ translate (-300) (-340) $ scale 0.5 0.5 $ text "Para limpar a celula, selecione-a e aperte 'espaco'"
-      , color white $ translate (-300) (-410) $ scale 0.5 0.5 $ text "Para dica: selecione uma celula e parte 't'"
+      , color white $ translate (-300) (-410) $ scale 0.5 0.5 $ text "Para dica: selecione uma celula e aperte 't'"
       ]
