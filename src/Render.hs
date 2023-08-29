@@ -19,9 +19,22 @@ drawGame game
             [ translate (fromIntegral x * cellWidth) (fromIntegral y * (- cellHeight)) $
               drawCell (grid game !! x !! y) (selectedCell game == Just (x, y))
             | x <- [0..gridSize-1], y <- [0..gridSize-1] ] 
-            -- ++ (translate (fromIntegral x * cellWidth) (fromIntegral y * (- cellHeight)) $ drawBlock )
+            ++ map (translate (cellWidth) (-cellHeight)) drawBlock
+            ++ map (translate (4*cellWidth) (-cellHeight)) drawBlock
+            ++ map (translate (7*cellWidth) (-cellHeight)) drawBlock
+
+            ++ map (translate (cellWidth) (-4*cellHeight)) drawBlock
+            ++ map (translate (4*cellWidth) (-4*cellHeight)) drawBlock
+            ++ map (translate (7*cellWidth) (-4*cellHeight)) drawBlock
+
+            ++ map (translate (cellWidth) (-7*cellHeight)) drawBlock
+            ++ map (translate (4*cellWidth) (-7*cellHeight)) drawBlock
+            ++ map (translate (7*cellWidth) (-7*cellHeight)) drawBlock
             ++ [drawFinishMessage game]
 
+-- map (translate (cellWidth) (-cellHeight)) drawBlock
+-- ++ map (translate (4*cellWidth) (-cellHeight)) drawBlock
+-- ++ map (translate (4*cellWidth) (-cellHeight)) drawBlock
 
 -- TODO ADD grid
 thickRectangle :: Float -> Float -> [Picture]
