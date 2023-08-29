@@ -17,6 +17,7 @@ module Game
   isInitialValue,
   selectNextCell,
   checkFinishedGrid,
+  generateRandomNumber
   )
   where
 import Control.Monad.Random
@@ -73,9 +74,7 @@ middleOfGridX = screenWidth * 0.5
 middleOfGridY = screenHeight * 0.5
 
 generateRandomNumber :: Int
-{-# NOINLINE generateRandomNumber #-}
 generateRandomNumber = unsafePerformIO (getStdRandom (randomR (1, 3)))
-
 
 -- Randomness
 
@@ -214,15 +213,8 @@ runFillGrid g = foldl (\acc (i, j) -> fillCellRandomValue (i,j) (hashSeed i j) a
 -- Garantir que tem solução, senão chamar novamente
 initialGrid :: Grid
 -- initialGrid = runFillGrid $ replicate gridSize (replicate gridSize 0)
--- facil
--- initialGrid = [[0,0,3,0,7,8,0,2,0],[0,0,0,1,0,9,7,0,4],[0,7,0,5,6,2,8,0,0],[0,3,2,0,0,0,0,0,1],[5,0,0,6,2,0,4,3,0],[0,4,0,3,8,0,2,5,0],[6,0,0,0,1,0,9,0,2],[3,1,0,2,9,0,8,7,0],[0,0,0,5,0,3,1,0,0]]
--- dificil
 initialGrid = [[0,0,0,4,0,0,0,0,0],[7,0,0,9,0,0,0,0,0],[0,0,0,0,0,0,7,0,3],[9,0,0,0,0,0,0,0,5],[0,0,4,0,9,0,8,0,1],[0,0,0,0,0,0,0,0,0],[1,0,0,2,5,0,0,8,0],[3,4,6,0,1,8,0,0,9],[2,0,0,0,0,9,0,0,6]]
--- initialGrid =  [ [0, 0, 0, 0]
---                 , [3, 0, 0, 0]
---                 , [0, 2, 0, 0]
---                 , [0, 0, 1, 0]
---               ]
+
 
 initialCand :: [[(Int, [Int])]]
 initialCand = replicate gridSize (replicate gridSize (0, [1..gridSize]))
