@@ -22,6 +22,8 @@ drawGame game
             -- ++ (translate (fromIntegral x * cellWidth) (fromIntegral y * (- cellHeight)) $ drawBlock )
             ++ [drawFinishMessage game]
 
+
+-- TODO ADD grid
 thickRectangle :: Float -> Float -> [Picture]
 thickRectangle width height =
   map (\w -> rectangleWire (width + w) (height + w)) [-2, -1, 0, 1, 2]
@@ -51,7 +53,7 @@ drawFinishMessage game =
   if finished game
     then translate (-100) 0 $ color green $ scale 0.5 0.5 $ pictures
       [
-        -- color blue $ rectangleSolid 8000 6000,
+       color blue $ rectangleSolid 8000 6000,
        translate (-90) (-10) $ color white $ text "Parabens, voce ganhou! :)"
       , color white $ translate (-150) (-100) $ scale 0.5 0.5 $ text "Aperte 'r' para jogar novamente"
       ]
