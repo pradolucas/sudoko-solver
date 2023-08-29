@@ -1,23 +1,37 @@
 module Game
-  -- (SudokuGame (..),
-  -- Grid,
-  -- gridSize,
-  -- screenWidth,
-  -- screenHeight,
-  -- cellWidth,
-  -- cellHeight,
-  -- middleOfGridX,
-  -- middleOfGridY,
-  -- initialGrid,
-  -- initialGame
-  -- )
-   where
+  (SudokuGame (..),
+  Grid,
+  gridSize,
+  screenWidth,
+  screenHeight,
+  cellWidth,
+  cellHeight,
+  middleOfGridX,
+  middleOfGridY,
+  initialGrid,
+  initialGame,
+  updateCandidates,
+  updateGrid,
+  candidatesFromGrid,
+  isCellValid,
+  isInitialValue,
+  selectNextCell,
+  checkFinishedGrid,
+  generateRandomNumber
+  )
+  where
 import Control.Monad.Random
-    ( fromList, evalRand, mkStdGen, RandomGen )
+    ( fromList,
+      evalRand,
+      getStdRandom,
+      mkStdGen,
+      Random(randomR),
+      RandomGen )
+
 import Data.Digest.Murmur32 ( asWord32, hash32 )
 import Data.List ((\\), intercalate)
-import System.Random
-import System.IO.Unsafe
+import System.Random ()
+import System.IO.Unsafe ( unsafePerformIO )
 import Data.Set (toList, fromList)
 
 type Grid = [[Int]]
@@ -27,7 +41,6 @@ data SudokuGame = SudokuGame
   , initialCells :: Grid
   , candidates :: [[(Int, [Int])]]
   , solverSelectedCell :: Maybe (Int, Int)
-  , solvedGrid :: Maybe Grid
   , selectedCell :: Maybe (Int, Int)
   , finished :: Bool
   , menuActive :: Bool
@@ -60,10 +73,8 @@ middleOfGridX, middleOfGridY :: Float
 middleOfGridX = screenWidth * 0.5
 middleOfGridY = screenHeight * 0.5
 
--- generateRandomNumber :: Int
--- {-# NOINLINE generateRandomNumber #-}
--- generateRandomNumber = unsafePerformIO (getStdRandom (randomR (1, 3)))
-
+generateRandomNumber :: Int
+generateRandomNumber = unsafePerformIO (getStdRandom (randomR (1, 3)))
 
 -- Randomness
 
@@ -95,7 +106,6 @@ isFinished (x,y) val g =
 
 checkFinishedGrid :: Grid -> Bool
 checkFinishedGrid g = and (isGridValid g)
--- checkFinishedGrid = all (notElem 0)
 
 -- Somente válido durante a inserção
 isCellValid :: (Int, Int) -> Int -> Grid -> Bool
@@ -165,20 +175,6 @@ resetCandidates (x, y) cands =
                   xs -> (val, xs ++ possibleValue)
         | otherwise = (val, vals)
 
-
--- resetCandidates :: (Int, Int) -> [[(Int, [Int])]] -> [[(Int, [Int])]]
--- resetCandidates (x, y) cands =
---     [[  if x==i && y==j 
---         then (0, [1..gridSize] \\ valuesFromRelated (i,j) cands)
---         else (val, 
---                   case vals of
---                     [] -> []  -- caso já esteja preenchido, n atualizar candidatos
---                     xs -> xs ++ possibleValue 
---          ) 
---         | (j, (val, vals)) <- zip [0..] row ]
---         | (i, row) <- zip [0..] cands]
---     where
-
 sameBlock :: (Int, Int) -> (Int, Int) -> Bool
 sameBlock (i1, j1) (i2, j2) = (blockLowerBoundX i1 == blockLowerBoundX i2) && (blockLowerBoundY j1 == blockLowerBoundY j2)
 
@@ -217,15 +213,8 @@ runFillGrid g = foldl (\acc (i, j) -> fillCellRandomValue (i,j) (hashSeed i j) a
 -- Garantir que tem solução, senão chamar novamente
 initialGrid :: Grid
 -- initialGrid = runFillGrid $ replicate gridSize (replicate gridSize 0)
--- facil
--- initialGrid = [[0,0,3,0,7,8,0,2,0],[0,0,0,1,0,9,7,0,4],[0,7,0,5,6,2,8,0,0],[0,3,2,0,0,0,0,0,1],[5,0,0,6,2,0,4,3,0],[0,4,0,3,8,0,2,5,0],[6,0,0,0,1,0,9,0,2],[3,1,0,2,9,0,8,7,0],[0,0,0,5,0,3,1,0,0]]
--- dificil
 initialGrid = [[0,0,0,4,0,0,0,0,0],[7,0,0,9,0,0,0,0,0],[0,0,0,0,0,0,7,0,3],[9,0,0,0,0,0,0,0,5],[0,0,4,0,9,0,8,0,1],[0,0,0,0,0,0,0,0,0],[1,0,0,2,5,0,0,8,0],[3,4,6,0,1,8,0,0,9],[2,0,0,0,0,9,0,0,6]]
--- initialGrid =  [ [0, 0, 0, 0]
---                 , [3, 0, 0, 0]
---                 , [0, 2, 0, 0]
---                 , [0, 0, 1, 0]
---               ]
+
 
 initialCand :: [[(Int, [Int])]]
 initialCand = replicate gridSize (replicate gridSize (0, [1..gridSize]))
@@ -256,7 +245,7 @@ initialGame = SudokuGame
               initialGrid -- initialCells
               (candidatesFromGrid initialCand initialGrid) -- candidates
               (Just (0,0)) -- solverSelectedCell
-              Nothing      -- solvedGrid
+              -- Nothing      -- solvedGrid
               Nothing      -- selectCell
               False        -- finished
               True        -- menuActive
