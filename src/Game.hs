@@ -56,11 +56,14 @@ instance Show SudokuGame where
       separator = replicate 20 '_' ++ "\n\n"
 
 
--- Params
+---------------------------
+------ Params -------------
+---------------------------
+
 
 gridSize, blockSize :: Int
 gridSize = 9
-blockSize = truncate . sqrt $ fromIntegral gridSize -- Quadrante
+blockSize = truncate (sqrt (fromIntegral gridSize :: Double)) -- Quadrante
 
 screenWidth, screenHeight :: Float
 screenWidth = 800
@@ -77,7 +80,10 @@ middleOfGridY = screenHeight * 0.5
 generateRandomNumber :: Int
 generateRandomNumber = unsafePerformIO (getStdRandom (randomR (0, 2)))
 
--- Randomness
+
+---------------------------
+------ Randomness ---------
+---------------------------
 
 weightedDistribution :: [(Int, Rational)]
 weightedDistribution = (0, 5) : [(i, 1) | i<-[1..(gridSize-1)]]
@@ -91,7 +97,10 @@ hashSeed :: (Num b, Show a1, Show a2) => a1 -> a2 -> b
 hashSeed row col =  12 + fromIntegral (asWord32 $ hash32 (show row ++ "," ++ show col))
 
 
--- Validate 
+
+---------------------------
+------ Validate -----------
+---------------------------
 
 isGridValid :: Grid -> [Bool]
 isGridValid g = [isFinished (i,j) (g !! i !! j) g && (g !! i !! j) /=0
@@ -131,7 +140,9 @@ blockLowerBoundY y = blockSize*(y `div` blockSize)
 blockUpperBoundY y = blockLowerBoundY y + (blockSize-1)
 
 
--- Update State
+---------------------------
+------ Update State -------
+---------------------------
 
 updateGrid :: (Int, Int) -> Int -> Grid -> Grid
 updateGrid (x, y) val g =
@@ -148,7 +159,6 @@ updateCandidates (x, y) newVal cands
     where
       
       updateRelatedCells (i, j) (v, vals)
-        -- | i == x && j == y && newVal == 0   = (newVal, [1..gridSize] \\ valuesFromRelated (i,j) cands) -- A cell que foi alterada, n tem mais candidatos
         | i == x && j == y = (newVal, []) -- A cell que foi alterada, n tem mais candidatos
         | i == x || j == y || sameBlock (i, j) (x, y) = (v, vals \\ [newVal])  -- Caso linha, coluna ou bloco do valor atualizado, apaga o valor como candidatos
         | otherwise = (v, vals)
@@ -197,7 +207,10 @@ selectNextCell (row, col)
   | otherwise = Nothing                         -- No more cells left to fill
 
 
--- Initialization
+
+---------------------------
+---- Initialization -------
+---------------------------
 
 fillCellRandomValue :: (Int, Int) -> Int -> Grid -> Grid
 fillCellRandomValue (i,j) seed g
@@ -211,10 +224,8 @@ runFillGrid g = foldl (\acc (i, j) -> fillCellRandomValue (i,j) (hashSeed i j) a
   where
     elementOrder = [(r, c) | c <- [0 .. gridSize - 1], r <- [0 .. gridSize - 1]]
 
--- Garantir que tem solução, senão chamar novamente
 initialGrid :: Grid
-initialGrid = [[0,0,0,4,0,0,0,0,0],[7,0,0,9,0,0,0,0,0],[0,0,0,0,0,0,7,0,3],[9,0,0,0,0,0,0,0,5],[0,0,4,0,9,0,8,0,1],[0,0,0,0,0,0,0,0,0],[1,0,0,2,5,0,0,8,0],[3,4,6,0,1,8,0,0,9],[2,0,0,0,0,9,0,0,6]]
--- initialGrid = runFillGrid $ replicate gridSize (replicate gridSize 0)
+initialGrid = runFillGrid $ replicate gridSize (replicate gridSize 0)
 
 
 initialCand :: [[(Int, [Int])]]
@@ -231,11 +242,6 @@ auxCandidatesFromGrid cand (Just (i,j)) g = auxCandidatesFromGrid acc (selectNex
     where
       acc = updateCandidates (i,j) (g !! i !! j) cand
 
--- auxCandidatesFromGrid :: Grid -> [[(Int, [Int])]]
--- auxCandidatesFromGrid g =  foldl (\acc (i,j, val) -> updateCandidates (i,j) val acc) initialCand elements
---                   where
---                     elements = [(i,j,val) | (i, row) <- zip [0..] g, (j, val) <- zip [0..] row]  
-
 
 isInitialValue :: (Int, Int) -> SudokuGame -> Bool
 isInitialValue (i,j) g = (initialCells g !! i !!  j)  /= 0
@@ -250,17 +256,3 @@ initialGame = SudokuGame
               Nothing      -- selectCell
               False        -- finished
               True        -- menuActive
-
-
-
-
-
--- data SudokuGame = SudokuGame
---   { grid :: Grid
---   , initialCells :: Grid
---   , candidates :: [[(Int, [Int])]]
---   , solverSelectedCell :: Maybe (Int, Int)
---   , selectedCell :: Maybe (Int, Int)
---   , finished :: Bool
---   , menuActive :: Bool
---   }

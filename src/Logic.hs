@@ -1,4 +1,6 @@
-module Logic where
+module Logic 
+(handleInput)
+where
 
 
 import Graphics.Gloss.Interface.IO.Game
@@ -20,7 +22,8 @@ import Game
       updateCandidates,
       candidatesFromGrid,
       isInitialValue,
-      initialGame, generateRandomNumber, initialCand )
+      generateRandomNumber,
+      initialCand )
 
 
 
@@ -98,9 +101,9 @@ handleInput (EventKey (Char 'e') Down _ _) game =
                 }
     else game
   where
-    sud = chooseSudoku (1::Int) 0
+    sud = chooseSudoku (1::Int) generateRandomNumber
 
--- Start the game when 'e' key is pressed
+-- Start the game when 'm' key is pressed
 handleInput (EventKey (Char 'm') Down _ _) game =
   if menuActive game
     then game {
@@ -117,7 +120,7 @@ handleInput (EventKey (Char 'm') Down _ _) game =
         sud = chooseSudoku (2::Int) generateRandomNumber
 
 
--- Start the game when 'e' key is pressed
+-- Start the game when 'h' key is pressed
 handleInput (EventKey (Char 'h') Down _ _) game =
   if menuActive game
     then game {
@@ -140,7 +143,8 @@ handleInput _ game = game
 chooseSudoku :: (Eq a, Num a) => a -> Int -> [[Int]]
 chooseSudoku dif n
     | dif == 1  = levelOne !! n
-    | otherwise = levelTwo !! n
+    | dif == 2  = levelTwo !! n
+    | otherwise = levelThree !! n
 
 
 getClickedCell :: (Float, Float) -> Maybe (Int, Int)
@@ -153,18 +157,45 @@ getClickedCell (x, y)
     y' = (y - (middleOfGridY + cellHeight/2)) / (-cellHeight)
 
 
-
-
-
 -- Sudokus
 
+levelOne, levelTwo, levelThree :: [[[Int]]]
+levelOne = [s11,s12,s13]
+levelTwo = [s21, s22,s23]
+levelThree = [s31, s32, s33]
 
-levelOne, levelTwo :: [[[Int]]]
-levelOne = [s21, s22,s23]
-levelTwo = [s31, s32, s33]
+
+s11, s12, s13  :: [[Int]]
+s11 = [[4,9,2,7,6,0,0,5,3],
+       [6,8,0,3,0,0,2,7,9],
+       [0,0,5,8,9,2,0,1,6],
+       [0,4,3,9,1,0,0,6,5],
+       [0,1,6,4,7,0,3,8,2],
+       [8,5,7,6,0,3,1,9,0],
+       [1,0,9,5,3,0,6,0,0],
+       [5,7,8,0,0,6,9,3,1],
+       [3,6,0,0,0,9,5,0,7]]
 
 
+s12 = [ [0,2,7,0,3,1,9,4,0],
+        [1,0,0,8,0,4,6,0,7],
+        [6,4,3,0,5,9,0,8,1],
+        [7,8,2,1,4,0,3,6,0],
+        [4,0,1,3,7,6,0,0,2],
+        [5,3,0,9,8,0,7,1,4],
+        [2,7,5,0,6,0,1,9,8],
+        [9,6,4,2,1,8,0,0,3],
+        [0,0,0,5,0,7,4,2,6]]
 
+s13 = [ [0,4,0,0,3,5,6,0,7],
+        [7,0,5,4,6,1,2,9,0],
+        [1,6,2,0,8,7,4,5,0], 
+        [3,8,6,5,0,4,0,2,9],
+        [2,7,0,6,9,8,5,0,0],
+        [5,0,4,1,2,0,0,8,6],
+        [0,0,7,8,4,2,0,6,5],
+        [4,0,8,3,0,6,0,7,1],
+        [6,0,0,7,1,0,8,4,2]]
 
 s21, s22, s23  :: [[Int]]
 s21 =  [[4,9,2,7,0,0,0,5,0],
