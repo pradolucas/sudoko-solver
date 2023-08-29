@@ -28,3 +28,6 @@ Durante o jogo:
 Lucas Prado Santos        11201811074 - A1 Matutino
 Fernanda Sayuri Alves Ito 11201811042 - A2 Noturno
 
+## Link vídeo explicativo
+https://youtu.be/69E6JNVisbY
+
