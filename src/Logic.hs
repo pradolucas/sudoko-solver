@@ -8,17 +8,21 @@ import Graphics.Gloss.Interface.IO.Game
       MouseButton(LeftButton),
       SpecialKey(KeySpace) )
 import Game
-    ( SudokuGame(..),
+    ( SudokuGame(SudokuGame, menuActive, finished, grid, candidates,
+                 selectedCell),
       gridSize,
       cellWidth,
       cellHeight,
       middleOfGridX,
       middleOfGridY,
+      checkFinishedGrid,
       isCellValid,
       updateGrid,
+      updateCandidates,
+      candidatesFromGrid,
       isInitialValue,
-      initialGame,
-      checkFinishedGrid, updateCandidates, candidatesFromGrid, resetCandidates )
+      initialGame )
+
 
 import Data.Char (ord, chr)
 import Solver (constraintSudokuSolver)
@@ -31,11 +35,12 @@ handleInput (EventKey (MouseButton LeftButton) Down _ mouse) game =
     Just cell -> game { selectedCell = Just cell }
     Nothing   -> game { selectedCell = Nothing }
 
-handleInput (EventKey (Char c) Down _ _) game@SudokuGame{ selectedCell = Just (x, y), grid = oldGrid }
+handleInput (EventKey (Char c) Down _ _) game@SudokuGame{ selectedCell = Just (x, y), grid = oldGrid, candidates = oldCandidates }
   | c >= '1' && c <= chr (ord '0' + gridSize)
     && isCellValid (x, y) (read [c]) oldGrid
     && not (isInitialValue (x, y) game) =
       game { grid = updateGrid (x, y) (read [c]) oldGrid,
+             candidates = updateCandidates (x,y) (read [c]) oldCandidates, 
              selectedCell = Nothing,
              finished = checkFinishedGrid (updateGrid (x, y) (read [c]) oldGrid) }
 
@@ -43,18 +48,19 @@ handleInput (EventKey (SpecialKey KeySpace) Down _ _) game@SudokuGame{ selectedC
   | not $ isInitialValue (x, y) game =
       game { grid = updateGrid (x, y) 0 (grid game),
              candidates = updateCandidates (x,y) 0 oldCandidates, 
-            --  candidates = resetCandidates (x, y) oldCandidates,
              selectedCell = Nothing }
 
-handleInput (EventKey (Char 't') Down _ _) game@SudokuGame{ selectedCell = Just (x, y), grid = oldGrid } =
-  let solution = constraintSudokuSolver game
-      newGame =
-        case solution of
-          Just sol -> game { grid = updateGrid (x, y) (sol !! x !! y) oldGrid,
-                             selectedCell = Nothing,
-                             finished = checkFinishedGrid (updateGrid (x, y) (sol !! x !! y) oldGrid) }
-          Nothing  -> game { selectedCell = Nothing }
-  in newGame
+handleInput (EventKey (Char 't') Down _ _) game@SudokuGame{ selectedCell = Just (x, y), grid = oldGrid, candidates = oldCandidates }
+  | oldGrid !! x !! y == 0  =
+    let solution = constraintSudokuSolver game
+        newGame =
+          case solution of
+            Just sol -> game { grid = updateGrid (x, y) (sol !! x !! y) oldGrid,
+                              candidates = updateCandidates (x,y) (sol !! x !! y) oldCandidates, 
+                              selectedCell = Nothing,
+                              finished = checkFinishedGrid (updateGrid (x, y) (sol !! x !! y) oldGrid) }
+            Nothing  -> game { selectedCell = Nothing }
+    in newGame
 
 handleInput (EventKey (Char 'f') Down _ _) game@SudokuGame{ grid = oldGrid, candidates = oldCandidates} =
   let solution = constraintSudokuSolver game
@@ -62,8 +68,8 @@ handleInput (EventKey (Char 'f') Down _ _) game@SudokuGame{ grid = oldGrid, cand
         case solution of
           Just sol -> game { grid = sol,
                              candidates   = candidatesFromGrid oldCandidates oldGrid,
-                             selectedCell = Nothing,
-                             finished     = checkFinishedGrid sol}
+                             selectedCell = Nothing
+                            }
           Nothing  -> game  {selectedCell = Nothing} -- TODO RETORNAR O GAME COM UMA MENSAGEM DE ERRO
   in newGame
 

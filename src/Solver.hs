@@ -1,4 +1,5 @@
 module Solver
+  (constraintSudokuSolver)
 where
 
 import Game

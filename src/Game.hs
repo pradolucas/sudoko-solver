@@ -1,23 +1,36 @@
 module Game
-  -- (SudokuGame (..),
-  -- Grid,
-  -- gridSize,
-  -- screenWidth,
-  -- screenHeight,
-  -- cellWidth,
-  -- cellHeight,
-  -- middleOfGridX,
-  -- middleOfGridY,
-  -- initialGrid,
-  -- initialGame
-  -- )
-   where
+  (SudokuGame (..),
+  Grid,
+  gridSize,
+  screenWidth,
+  screenHeight,
+  cellWidth,
+  cellHeight,
+  middleOfGridX,
+  middleOfGridY,
+  initialGrid,
+  initialGame,
+  updateCandidates,
+  updateGrid,
+  candidatesFromGrid,
+  isCellValid,
+  isInitialValue,
+  selectNextCell,
+  checkFinishedGrid,
+  )
+  where
 import Control.Monad.Random
-    ( fromList, evalRand, mkStdGen, RandomGen )
+    ( fromList,
+      evalRand,
+      getStdRandom,
+      mkStdGen,
+      Random(randomR),
+      RandomGen )
+
 import Data.Digest.Murmur32 ( asWord32, hash32 )
 import Data.List ((\\), intercalate)
-import System.Random
-import System.IO.Unsafe
+import System.Random ()
+import System.IO.Unsafe ( unsafePerformIO )
 import Data.Set (toList, fromList)
 
 type Grid = [[Int]]
@@ -27,7 +40,6 @@ data SudokuGame = SudokuGame
   , initialCells :: Grid
   , candidates :: [[(Int, [Int])]]
   , solverSelectedCell :: Maybe (Int, Int)
-  , solvedGrid :: Maybe Grid
   , selectedCell :: Maybe (Int, Int)
   , finished :: Bool
   , menuActive :: Bool
@@ -60,9 +72,9 @@ middleOfGridX, middleOfGridY :: Float
 middleOfGridX = screenWidth * 0.5
 middleOfGridY = screenHeight * 0.5
 
--- generateRandomNumber :: Int
--- {-# NOINLINE generateRandomNumber #-}
--- generateRandomNumber = unsafePerformIO (getStdRandom (randomR (1, 3)))
+generateRandomNumber :: Int
+{-# NOINLINE generateRandomNumber #-}
+generateRandomNumber = unsafePerformIO (getStdRandom (randomR (1, 3)))
 
 
 -- Randomness
@@ -95,7 +107,6 @@ isFinished (x,y) val g =
 
 checkFinishedGrid :: Grid -> Bool
 checkFinishedGrid g = and (isGridValid g)
--- checkFinishedGrid = all (notElem 0)
 
 -- Somente válido durante a inserção
 isCellValid :: (Int, Int) -> Int -> Grid -> Bool
@@ -164,20 +175,6 @@ resetCandidates (x, y) cands =
                   [] -> (val, [])  -- caso já esteja preenchido, n atualizar candidatos
                   xs -> (val, xs ++ possibleValue)
         | otherwise = (val, vals)
-
-
--- resetCandidates :: (Int, Int) -> [[(Int, [Int])]] -> [[(Int, [Int])]]
--- resetCandidates (x, y) cands =
---     [[  if x==i && y==j 
---         then (0, [1..gridSize] \\ valuesFromRelated (i,j) cands)
---         else (val, 
---                   case vals of
---                     [] -> []  -- caso já esteja preenchido, n atualizar candidatos
---                     xs -> xs ++ possibleValue 
---          ) 
---         | (j, (val, vals)) <- zip [0..] row ]
---         | (i, row) <- zip [0..] cands]
---     where
 
 sameBlock :: (Int, Int) -> (Int, Int) -> Bool
 sameBlock (i1, j1) (i2, j2) = (blockLowerBoundX i1 == blockLowerBoundX i2) && (blockLowerBoundY j1 == blockLowerBoundY j2)
@@ -256,7 +253,7 @@ initialGame = SudokuGame
               initialGrid -- initialCells
               (candidatesFromGrid initialCand initialGrid) -- candidates
               (Just (0,0)) -- solverSelectedCell
-              Nothing      -- solvedGrid
+              -- Nothing      -- solvedGrid
               Nothing      -- selectCell
               False        -- finished
               True        -- menuActive
