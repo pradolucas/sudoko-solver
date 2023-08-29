@@ -13,5 +13,5 @@ stack run
 
 ## Desenvolvedores
 
-Lucas Prado Santos        11201811074
-Fernanda Sayuri Alves Ito 11201811042
+Lucas Prado Santos        11201811074 - A1 Matutino
+Fernanda Sayuri Alves Ito 11201811042 - A2 Noturno
