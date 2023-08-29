@@ -8,8 +8,7 @@ import Graphics.Gloss.Interface.IO.Game
       MouseButton(LeftButton),
       SpecialKey(KeySpace) )
 import Game
-    ( SudokuGame(SudokuGame, initialCells, finished, grid, candidates,
-                 selectedCell, menuActive),
+    ( SudokuGame(..),
       gridSize,
       cellWidth,
       cellHeight,
@@ -21,7 +20,7 @@ import Game
       updateCandidates,
       candidatesFromGrid,
       isInitialValue,
-      initialGame, generateRandomNumber )
+      initialGame, generateRandomNumber, initialCand )
 
 
 
@@ -74,29 +73,65 @@ handleInput (EventKey (Char 'f') Down _ _) game@SudokuGame{ grid = oldGrid, cand
           Nothing  -> game  {selectedCell = Nothing} -- TODO RETORNAR O GAME COM UMA MENSAGEM DE ERRO
   in newGame
 
-handleInput (EventKey (Char 'r') Down _ _) _ = initialGame
+-- handleInput (EventKey (Char 'r') Down _ _) _ = initialGame
+handleInput (EventKey (Char 'r') Down _ _) game = game {
+                                                        grid= initialCells game,
+                                                        candidates   = candidatesFromGrid initialCand (initialCells game),
+                                                        solverSelectedCell = Just (0,0),
+                                                        selectedCell = Nothing,
+                                                        finished     = False,
+                                                        menuActive = False
+                                                        }
+
 
 -- Start the game when 'e' key is pressed
 handleInput (EventKey (Char 'e') Down _ _) game =
   if menuActive game
     then game {
-                initialCells = chooseSudoku (1::Int) generateRandomNumber,
+                grid         = sud,
+                initialCells = sud,
+                candidates   = candidatesFromGrid initialCand sud,
+                solverSelectedCell = Just (0,0),
+                selectedCell = Nothing,
+                finished     = False,
                 menuActive = False
                 }
     else game
+  where
+    sud = chooseSudoku (1::Int) 0
+
 -- Start the game when 'e' key is pressed
 handleInput (EventKey (Char 'm') Down _ _) game =
   if menuActive game
     then game {
-                menuActive = False,
-                initialCells = chooseSudoku (2::Int) generateRandomNumber}
+                grid         = sud,
+                initialCells = sud,
+                candidates   = candidatesFromGrid initialCand sud,
+                solverSelectedCell = Just (0,0),
+                selectedCell = Nothing,
+                finished     = False,
+                menuActive = False
+                }
     else game
+    where
+        sud = chooseSudoku (2::Int) generateRandomNumber
+
+
 -- Start the game when 'e' key is pressed
 handleInput (EventKey (Char 'h') Down _ _) game =
   if menuActive game
-    then game { menuActive = False,
-                initialCells = chooseSudoku (3::Int) generateRandomNumber}
+    then game {
+                grid         = sud,
+                initialCells = sud,
+                candidates   = candidatesFromGrid initialCand sud,
+                solverSelectedCell = Just (0,0),
+                selectedCell = Nothing,
+                finished     = False,
+                menuActive = False
+                }
     else game
+    where
+    sud = chooseSudoku (3::Int) generateRandomNumber
 
 -- Default case for other inputs
 handleInput _ game = game
@@ -105,8 +140,7 @@ handleInput _ game = game
 chooseSudoku :: (Eq a, Num a) => a -> Int -> [[Int]]
 chooseSudoku dif n
     | dif == 1  = levelOne !! n
-    | dif == 2  = levelTwo !! n
-    | otherwise = levelThree !! n
+    | otherwise = levelTwo !! n
 
 
 getClickedCell :: (Float, Float) -> Maybe (Int, Int)
@@ -122,34 +156,13 @@ getClickedCell (x, y)
 
 
 
-
-
-
-
 -- Sudokus
 
 
-levelOne, levelTwo, levelThree :: [[[Int]]]
-levelOne = [s11,s12,s13]
-levelTwo = [s21, s22,s23]
-levelThree = [s31, s32, s33]
+levelOne, levelTwo :: [[[Int]]]
+levelOne = [s21, s22,s23]
+levelTwo = [s31, s32, s33]
 
-
-s11, s12, s13  :: [[Int]]
-s11 =  [[0,4,0,3],
-        [0,1,4,2],
-        [4,0,0,0],
-        [1,2,0,4]]
-
-s12 =  [[0,0,0,1],
-        [1,2,3,0],
-        [3,4,0,2],
-        [2,0,4,3]]
-
-s13 =  [[4,0,3,0],
-        [0,1,2,0],
-        [0,4,0,3],
-        [1,0,4,2]]
 
 
 
