@@ -2,6 +2,9 @@
 
 Projeto desenvolvido para disciplina de Paradigmas de Programação
 
+<p align="center">
+  <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMzIwZWpibXdvbmE1Z2NxaXMxdjVjZTg4M211NWtsbHR3MWt3ZnVvZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/teyK5k7YbW9AqnORqn/giphy.gif" alt="animated" />
+</p>
 
 ## Execução
 
